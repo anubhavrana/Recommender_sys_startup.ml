@@ -27,13 +27,6 @@ user_friends = pd.read_json(user_friends_file, lines=True)
 applied_tags = pd.read_json(applied_tags_file, lines=True)
 plays = pd.read_json(plays_file, lines=True)
 
-#tags.tail()
-#artists.tail()
-#plays.tail()
-#artists.describe()
-#tags.describe()
-#plays.describe()
-
 #artists and plays is combined
 #tags, applied_tags and user_friends is combined
 artist_plays = pd.merge(artists, plays)
@@ -62,16 +55,16 @@ tmp_plays = plays.ix[atrs[atrs > play_count].index].dropna()
 tmp_df = tmp_plays.pivot(index='user_id', columns='artist_id', values='plays')
 
 #Reduced artist plays matrix --> if artist has more than 150 plays, value is 1, else, value is 0
-the_data = tmp_df.applymap(lambda x: 1 if x > 150 else 0).as_matrix()
+art_plays_df = tmp_df.applymap(lambda x: 1 if x > 150 else 0).as_matrix()
 
 #cosine similarity function
 def cosine_similarity(u, v):
     return(np.dot(u, v)/np.sqrt((np.dot(u, u) * np.dot(v, v))))
 
 # The user-artist matrix
-x = the_data
+x = art_plays_df
 
-# Make a fake user (with artist plays that will guarantee a match)
+# Make a fake user 
 y = np.zeros(the_data.shape[1], dtype=np.int32)
 for i in np.where(x == 1)[1]:
     y[i] = 1
@@ -89,8 +82,8 @@ mx = np.nanmax(sims)
 usr_idx = np.where(sims==mx)[0][1]
 
 # Printing the first thirty plays of test user and matched user.
-print(y[:30])
-print(x[usr_idx, :30])
+print(y[:40])
+print(x[usr_idx, :40])
 
 print('\nCosine Similarity(y, x[{0:d}]) = {1:4.3f}' \
       .format(usr_idx, cosine_similarity(y, x[usr_idx])), end='\n\n')
@@ -103,7 +96,7 @@ art_vec = y - x[usr_idx]
 art_vec[art_vec >= 0] = 1
 art_vec[art_vec < 0] = 0
 
-print(art_vec[:30])
+print(art_vec[:40])
 
 # Printing out the number of artists we will recommend.
 print('\n{0} Artist Recommendations for User = {1}' \
@@ -133,7 +126,7 @@ print(50*'=')
 
 from sklearn.cross_validation import train_test_split
 
-x, y = the_data, range(the_data.shape[0])
+x, y = art_plays_df, range(art_plays_df.shape[0])
 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.1, random_state=42)
 
